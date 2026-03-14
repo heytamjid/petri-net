@@ -24,6 +24,7 @@ class App {
     this._setupAnalyzeButton();
     this._setupKeyboardShortcuts();
     this._setupClickToFire();
+    this._setupPanZoom();
 
     // Load default example
     const defaultExample = 'German Traffic Light';
@@ -47,20 +48,8 @@ class App {
   // ===================== SIMULATION CONTROLS =====================
 
   _setupSimControls() {
-    document.getElementById('btn-step').addEventListener('click', () => this.stepOnce());
     document.getElementById('btn-play').addEventListener('click', () => this.playSteps());
     document.getElementById('btn-reset').addEventListener('click', () => this.resetSimulation());
-  }
-
-  stepOnce() {
-    const fired = this.simulator.fireRandom();
-    if (fired) {
-      const t = this.net.transitions.get(fired);
-      this.log(`Step ${this.simulator.stepCount}: Fired ${t ? t.label : fired}`);
-    } else {
-      this.log('DEADLOCK: No transitions are enabled.');
-    }
-    this.refresh();
   }
 
   playSteps() {
@@ -373,7 +362,7 @@ class App {
         case 'd': this._activateMode('delete', buttons); break;
         case ' ':
           e.preventDefault();
-          this.stepOnce();
+          this.playSteps();
           break;
         case 'r':
           this.resetSimulation();
@@ -387,6 +376,10 @@ class App {
             this.refresh();
           }
           break;
+        case '0':
+          this.renderer.resetView();
+          this.refresh();
+          break;
         case 'escape':
           this.editor.setMode('select');
           this.editor.select(null, null);
@@ -399,6 +392,53 @@ class App {
   _activateMode(mode, buttons) {
     buttons.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
     this.editor.setMode(mode);
+  }
+
+  // ===================== PAN & ZOOM =====================
+
+  _setupPanZoom() {
+    // Zoom with scroll wheel
+    this.svg.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const rect = this.svg.getBoundingClientRect();
+      const sx = e.clientX - rect.left;
+      const sy = e.clientY - rect.top;
+      this.renderer.zoomAt(sx, sy, e.deltaY);
+      this.refresh();
+    }, { passive: false });
+
+    // Pan with middle-mouse drag or right-mouse drag
+    let panning = false;
+    let panStartX = 0, panStartY = 0;
+
+    this.svg.addEventListener('mousedown', (e) => {
+      // Middle button (1) or right button (2)
+      if (e.button === 1 || e.button === 2) {
+        e.preventDefault();
+        panning = true;
+        panStartX = e.clientX;
+        panStartY = e.clientY;
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!panning) return;
+      const dx = e.clientX - panStartX;
+      const dy = e.clientY - panStartY;
+      panStartX = e.clientX;
+      panStartY = e.clientY;
+      this.renderer.pan(dx, dy);
+      this.refresh();
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (e.button === 1 || e.button === 2) {
+        panning = false;
+      }
+    });
+
+    // Disable context menu on canvas so right-click drag works
+    this.svg.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
   // ===================== CLICK-TO-FIRE =====================
@@ -447,7 +487,9 @@ class App {
     for (const [id, place] of this.net.places) {
       parts.push(`${place.label}: <strong>${place.tokens}</strong>`);
     }
-    el.innerHTML = parts.length > 0 ? `M = [ ${parts.join(' , ')} ]` : 'Empty net';
+    const zoomPct = Math.round(this.renderer.zoom * 100);
+    const marking = parts.length > 0 ? `M = [ ${parts.join(' , ')} ]` : 'Empty net';
+    el.innerHTML = `<span class="zoom-indicator">${zoomPct}%</span> ${marking}`;
   }
 
   log(message) {

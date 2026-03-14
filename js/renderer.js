@@ -17,15 +17,26 @@ export class Renderer {
     this.selectedId = null;
     this.arcSourceId = null; // for arc-drawing preview
 
-    // Create layers
+    // Pan & zoom state
+    this.panX = 0;
+    this.panY = 0;
+    this.zoom = 1;
+    this.MIN_ZOOM = 0.15;
+    this.MAX_ZOOM = 4;
+
+    // Root transform group (wraps all visual layers)
+    this.world = this._createGroup('world');
+    this.svg.appendChild(this.world);
+
+    // Create layers inside the world group
     this.arcLayer = this._createGroup('arc-layer');
     this.nodeLayer = this._createGroup('node-layer');
     this.overlayLayer = this._createGroup('overlay-layer');
-    this.svg.appendChild(this.arcLayer);
-    this.svg.appendChild(this.nodeLayer);
-    this.svg.appendChild(this.overlayLayer);
+    this.world.appendChild(this.arcLayer);
+    this.world.appendChild(this.nodeLayer);
+    this.world.appendChild(this.overlayLayer);
 
-    // Defs for arrowheads
+    // Defs for arrowheads (outside world, defs are global)
     this._createDefs();
   }
 
@@ -77,11 +88,52 @@ export class Renderer {
     this.selectedId = id;
   }
 
+  // ---- Pan & Zoom ----
+
+  /** Convert screen (SVG element) coordinates to world coordinates */
+  screenToWorld(sx, sy) {
+    return {
+      x: (sx - this.panX) / this.zoom,
+      y: (sy - this.panY) / this.zoom,
+    };
+  }
+
+  /** Apply pan delta in screen pixels */
+  pan(dx, dy) {
+    this.panX += dx;
+    this.panY += dy;
+    this._updateTransform();
+  }
+
+  /** Zoom toward a screen point */
+  zoomAt(screenX, screenY, delta) {
+    const oldZoom = this.zoom;
+    const factor = delta > 0 ? 0.9 : 1.1;
+    this.zoom = Math.min(this.MAX_ZOOM, Math.max(this.MIN_ZOOM, this.zoom * factor));
+
+    // Keep the point under the cursor fixed
+    this.panX = screenX - (screenX - this.panX) * (this.zoom / oldZoom);
+    this.panY = screenY - (screenY - this.panY) * (this.zoom / oldZoom);
+    this._updateTransform();
+  }
+
+  resetView() {
+    this.panX = 0;
+    this.panY = 0;
+    this.zoom = 1;
+    this._updateTransform();
+  }
+
+  _updateTransform() {
+    this.world.setAttribute('transform', `translate(${this.panX},${this.panY}) scale(${this.zoom})`);
+  }
+
   /** Full re-render */
   render() {
     this.arcLayer.innerHTML = '';
     this.nodeLayer.innerHTML = '';
     this.overlayLayer.innerHTML = '';
+    this._updateTransform();
 
     // Draw arcs first (behind nodes)
     for (const arc of this.net.arcs.values()) {

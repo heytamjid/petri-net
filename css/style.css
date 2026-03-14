@@ -197,24 +197,14 @@ body {
   background: var(--accent-hover);
 }
 
-.action-btn.analyze {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-
-.action-btn.analyze:hover {
-  background: var(--primary-hover);
-}
-
 .action-btn.danger {
-  color: var(--danger);
-  border-color: var(--danger);
+  color: var(--text-secondary);
+  border-color: var(--border);
 }
 
 .action-btn.danger:hover {
-  background: var(--danger);
-  color: white;
+  background: #f3f4f6;
+  border-color: #d1d5db;
 }
 
 #step-count {
@@ -257,6 +247,17 @@ body {
   font-family: var(--mono);
   font-size: 13px;
   color: var(--text);
+}
+
+.zoom-indicator {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-right: 8px;
 }
 
 /* ============================================================

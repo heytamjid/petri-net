@@ -38,20 +38,9 @@
 
     <div class="toolbar-section">
       <span class="toolbar-label">Simulate</span>
-      <button id="btn-step" class="action-btn" title="Fire one random enabled transition">Step</button>
-      <button id="btn-play" class="action-btn accent" title="Fire N steps">
-        Play
-      </button>
+      <button id="btn-play" class="action-btn accent" title="Fire N steps">Play</button>
       <input type="number" id="step-count" value="1" min="1" max="1000" title="Number of steps" />
       <span class="step-label">steps</span>
-      <button id="btn-reset" class="action-btn" title="Reset to initial marking">Reset</button>
-    </div>
-
-    <div class="toolbar-divider"></div>
-
-    <div class="toolbar-section">
-      <span class="toolbar-label">Analyze</span>
-      <button id="btn-analyze" class="action-btn analyze" title="Run property analysis">Analyze</button>
     </div>
 
     <div class="toolbar-divider"></div>
@@ -64,6 +53,8 @@
       <button id="btn-load-example" class="action-btn">Load</button>
       <button id="btn-export" class="action-btn">Export</button>
       <button id="btn-import" class="action-btn">Import</button>
+      <button id="btn-reset" class="action-btn danger" title="Reset to initial marking">Reset</button>
+      <button id="btn-analyze" class="action-btn danger" title="Run property analysis">Analyze</button>
       <button id="btn-clear" class="action-btn danger">Clear</button>
     </div>
   </header>
@@ -91,10 +82,13 @@
         <div class="shortcut-row"><kbd>T</kbd> Transition</div>
         <div class="shortcut-row"><kbd>A</kbd> Arc</div>
         <div class="shortcut-row"><kbd>D</kbd> Delete tool</div>
-        <div class="shortcut-row"><kbd>Space</kbd> Step once</div>
+        <div class="shortcut-row"><kbd>Space</kbd> Play steps</div>
         <div class="shortcut-row"><kbd>R</kbd> Reset</div>
         <div class="shortcut-row"><kbd>Del</kbd> Remove selected</div>
         <div class="shortcut-row"><kbd>Dbl-click</kbd> Fire transition</div>
+        <div class="shortcut-row"><kbd>Scroll</kbd> Zoom in/out</div>
+        <div class="shortcut-row"><kbd>Right-drag</kbd> Pan canvas</div>
+        <div class="shortcut-row"><kbd>0</kbd> Reset view</div>
       </div>
       <div id="legend">
         <h3>Legend</h3>

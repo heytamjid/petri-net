@@ -60,10 +60,10 @@ export class Editor {
 
   _getSVGPoint(e) {
     const rect = this.svg.getBoundingClientRect();
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    // Convert screen coords to world coords via renderer transform
+    return this.renderer.screenToWorld(sx, sy);
   }
 
   _onMouseDown(e) {
