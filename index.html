@@ -38,7 +38,8 @@
 
     <div class="toolbar-section">
       <span class="toolbar-label">Simulate</span>
-      <button id="btn-play" class="action-btn accent" title="Fire N steps">Play</button>
+      <button id="btn-back" class="action-btn" title="Undo N steps (B)">Back</button>
+      <button id="btn-play" class="action-btn accent" title="Fire N steps (Space)">Play</button>
       <input type="number" id="step-count" value="1" min="1" max="1000" title="Number of steps" />
       <span class="step-label">steps</span>
     </div>
@@ -82,10 +83,11 @@
         <div class="shortcut-row"><kbd>T</kbd> Transition</div>
         <div class="shortcut-row"><kbd>A</kbd> Arc</div>
         <div class="shortcut-row"><kbd>D</kbd> Delete tool</div>
-        <div class="shortcut-row"><kbd>Space</kbd> Play steps</div>
+        <div class="shortcut-row"><kbd>Space</kbd> Play forward</div>
+        <div class="shortcut-row"><kbd>B</kbd> Play backward</div>
         <div class="shortcut-row"><kbd>R</kbd> Reset</div>
         <div class="shortcut-row"><kbd>Del</kbd> Remove selected</div>
-        <div class="shortcut-row"><kbd>Dbl-click</kbd> Fire transition</div>
+        <div class="shortcut-row"><kbd>Dbl-click</kbd> Edit label</div>
         <div class="shortcut-row"><kbd>Scroll</kbd> Zoom in/out</div>
         <div class="shortcut-row"><kbd>Right-drag</kbd> Pan canvas</div>
         <div class="shortcut-row"><kbd>0</kbd> Reset view</div>

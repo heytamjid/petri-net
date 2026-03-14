@@ -23,7 +23,6 @@ class App {
     this._setupExamples();
     this._setupAnalyzeButton();
     this._setupKeyboardShortcuts();
-    this._setupClickToFire();
     this._setupPanZoom();
 
     // Load default example
@@ -49,30 +48,222 @@ class App {
 
   _setupSimControls() {
     document.getElementById('btn-play').addEventListener('click', () => this.playSteps());
+    document.getElementById('btn-back').addEventListener('click', () => this.playBack());
     document.getElementById('btn-reset').addEventListener('click', () => this.resetSimulation());
   }
 
-  playSteps() {
+  /** Play forward N steps with animation */
+  async playSteps() {
+    if (this._animating) return;
     const n = parseInt(document.getElementById('step-count').value, 10) || 1;
-    const startStep = this.simulator.stepCount;
-    const fired = this.simulator.playSteps(n);
-    for (let i = 0; i < fired.length; i++) {
-      const t = this.net.transitions.get(fired[i]);
-      this.log(`Step ${startStep + i + 1}: Fired ${t ? t.label : fired[i]}`);
+    this._animating = true;
+    this._setSimButtonsDisabled(true);
+
+    let firedCount = 0;
+    for (let i = 0; i < n; i++) {
+      const enabled = this.simulator.getEnabledTransitions();
+      if (enabled.length === 0) {
+        this.log('DEADLOCK: No more transitions can fire.');
+        break;
+      }
+      const tid = enabled[Math.floor(Math.random() * enabled.length)];
+      const t = this.net.transitions.get(tid);
+
+      // Animate then fire
+      await this._animateFiring(tid);
+      this.simulator.fire(tid);
+      firedCount++;
+      this.log(`Step ${this.simulator.stepCount}: Fired ${t ? t.label : tid}`);
+      this.refresh();
     }
-    if (fired.length < n) {
-      this.log('DEADLOCK: No more transitions can fire.');
+
+    if (firedCount > 1) {
+      this.log(`Completed ${firedCount}/${n} steps.`);
     }
-    if (fired.length > 0) {
-      this.log(`Completed ${fired.length}/${n} steps.`);
+    this._animating = false;
+    this._setSimButtonsDisabled(false);
+  }
+
+  /** Play backward N steps with animation */
+  async playBack() {
+    if (this._animating) return;
+    const n = parseInt(document.getElementById('step-count').value, 10) || 1;
+
+    if (!this.simulator.canStepBack()) {
+      this.log('Nothing to undo.');
+      return;
     }
-    this.refresh();
+
+    this._animating = true;
+    this._setSimButtonsDisabled(true);
+
+    let undoneCount = 0;
+    for (let i = 0; i < n; i++) {
+      if (!this.simulator.canStepBack()) break;
+
+      const entry = this.simulator.history[this.simulator.history.length - 1];
+      await this._animateFiring(entry.transitionId, true);
+      this.simulator.stepBack();
+      undoneCount++;
+      this.log(`Undo step ${this.simulator.stepCount + 1}: Reverted ${entry.label}`);
+      this.refresh();
+    }
+
+    if (undoneCount > 1) {
+      this.log(`Reverted ${undoneCount}/${n} steps.`);
+    }
+    this._animating = false;
+    this._setSimButtonsDisabled(false);
+  }
+
+  _setSimButtonsDisabled(disabled) {
+    for (const id of ['btn-play', 'btn-back', 'btn-reset']) {
+      document.getElementById(id).disabled = disabled;
+    }
   }
 
   resetSimulation() {
+    if (this._animating) return;
     this.simulator.reset();
     this.log('Simulation reset to initial marking.');
     this.refresh();
+  }
+
+  // ===================== FIRING ANIMATION =====================
+
+  /**
+   * Animate a transition firing.
+   * Forward: tokens travel from input places -> transition -> output places.
+   * Backward (reverse=true): tokens travel from output places -> transition -> input places.
+   * Returns a promise that resolves when animation completes.
+   */
+  _animateFiring(transitionId, reverse = false) {
+    const DURATION = 350; // ms per phase
+    const t = this.net.transitions.get(transitionId);
+    if (!t) return Promise.resolve();
+
+    const inputArcs = this.net.getInputArcs(transitionId);
+    const outputArcs = this.net.getOutputArcs(transitionId);
+
+    // In reverse, inputs and outputs swap visually
+    const consumeArcs = reverse ? outputArcs : inputArcs;
+    const produceArcs = reverse ? inputArcs : outputArcs;
+
+    return new Promise((resolve) => {
+      // Phase 1: tokens travel from consume-places to transition
+      const dots1 = this._createAnimDots(consumeArcs, t, true, reverse);
+      this._animateDots(dots1, DURATION, () => {
+        // Flash the transition
+        this._flashTransition(transitionId, DURATION * 0.4, () => {
+          // Phase 2: tokens travel from transition to produce-places
+          const dots2 = this._createAnimDots(produceArcs, t, false, reverse);
+          this._animateDots(dots2, DURATION, () => {
+            resolve();
+          });
+        });
+      });
+    });
+  }
+
+  /**
+   * Create animated dot elements for token travel.
+   * @param {Array} arcs - arcs to animate along
+   * @param {Object} transition - the transition node
+   * @param {boolean} towardTransition - true if dots move toward transition, false if away
+   * @param {boolean} reverse - whether this is a reverse animation
+   */
+  _createAnimDots(arcs, transition, towardTransition, reverse) {
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const dots = [];
+
+    for (const arc of arcs) {
+      const place = this.net.places.get(arc.placeId);
+      if (!place) continue;
+
+      const fromX = towardTransition ? place.x : transition.x;
+      const fromY = towardTransition ? place.y : transition.y;
+      const toX = towardTransition ? transition.x : place.x;
+      const toY = towardTransition ? transition.y : place.y;
+
+      for (let w = 0; w < arc.weight; w++) {
+        const dot = document.createElementNS(SVG_NS, 'circle');
+        dot.setAttribute('cx', fromX);
+        dot.setAttribute('cy', fromY);
+        dot.setAttribute('r', 5);
+        dot.setAttribute('class', reverse ? 'anim-token reverse' : 'anim-token');
+        this.renderer.overlayLayer.appendChild(dot);
+        dots.push({ el: dot, fromX, fromY, toX, toY });
+      }
+    }
+    return dots;
+  }
+
+  _animateDots(dots, duration, onComplete) {
+    if (dots.length === 0) {
+      onComplete();
+      return;
+    }
+
+    const start = performance.now();
+    const step = (now) => {
+      const progress = Math.min(1, (now - start) / duration);
+      // Ease in-out
+      const ease = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+      for (const dot of dots) {
+        const x = dot.fromX + (dot.toX - dot.fromX) * ease;
+        const y = dot.fromY + (dot.toY - dot.fromY) * ease;
+        dot.el.setAttribute('cx', x);
+        dot.el.setAttribute('cy', y);
+        // Scale: grow in the middle of travel
+        const scale = 1 + 0.5 * Math.sin(progress * Math.PI);
+        dot.el.setAttribute('r', 5 * scale);
+      }
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        // Remove dots
+        for (const dot of dots) {
+          dot.el.remove();
+        }
+        onComplete();
+      }
+    };
+    requestAnimationFrame(step);
+  }
+
+  _flashTransition(transitionId, duration, onComplete) {
+    const t = this.net.transitions.get(transitionId);
+    if (!t) { onComplete(); return; }
+
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const flash = document.createElementNS(SVG_NS, 'rect');
+    const hw = 16 / 2; // TRANSITION_WIDTH / 2
+    const hh = 50 / 2; // TRANSITION_HEIGHT / 2
+    flash.setAttribute('x', t.x - hw - 4);
+    flash.setAttribute('y', t.y - hh - 4);
+    flash.setAttribute('width', hw * 2 + 8);
+    flash.setAttribute('height', hh * 2 + 8);
+    flash.setAttribute('rx', 4);
+    flash.setAttribute('class', 'anim-flash');
+    this.renderer.overlayLayer.appendChild(flash);
+
+    const start = performance.now();
+    const step = (now) => {
+      const progress = Math.min(1, (now - start) / duration);
+      const opacity = 1 - progress;
+      flash.setAttribute('opacity', opacity);
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        flash.remove();
+        onComplete();
+      }
+    };
+    requestAnimationFrame(step);
   }
 
   // ===================== PROPERTIES PANEL =====================
@@ -362,7 +553,10 @@ class App {
         case 'd': this._activateMode('delete', buttons); break;
         case ' ':
           e.preventDefault();
-          this.playSteps();
+          if (!this._animating) this.playSteps();
+          break;
+        case 'b':
+          if (!this._animating) this.playBack();
           break;
         case 'r':
           this.resetSimulation();
@@ -441,12 +635,6 @@ class App {
     this.svg.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
-  // ===================== CLICK-TO-FIRE =====================
-
-  _setupClickToFire() {
-    // Handled via onEditorChange 'dblclick' event
-  }
-
   // ===================== SHARED =====================
 
   onEditorChange(event, data) {
@@ -458,18 +646,11 @@ class App {
       this.simulator.reset();
     }
     if (event === 'dblclick') {
-      // Double-click on enabled transition -> fire it
-      if (data.type === 'transition' && this.simulator.isEnabled(data.id)) {
-        const t = this.net.transitions.get(data.id);
-        this.simulator.fire(data.id);
-        this.log(`Step ${this.simulator.stepCount}: Fired ${t ? t.label : data.id} (manual)`);
-      } else {
-        // Focus the label input in properties
-        setTimeout(() => {
-          const input = this.propsPanel.querySelector('input[data-prop="label"]');
-          if (input) input.focus();
-        }, 50);
-      }
+      // Focus the label input in properties for editing
+      setTimeout(() => {
+        const input = this.propsPanel.querySelector('input[data-prop="label"]');
+        if (input) input.focus();
+      }, 50);
     }
     this.refresh();
   }

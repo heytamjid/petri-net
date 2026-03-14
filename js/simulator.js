@@ -89,9 +89,41 @@ export class Simulator {
     return fired;
   }
 
+  /**
+   * Undo one step by popping history and restoring the previous marking.
+   * Returns the history entry that was undone, or null if nothing to undo.
+   */
+  stepBack() {
+    if (this.history.length === 0) return null;
+    const entry = this.history.pop();
+    this.stepCount--;
+    // Restore the marking from before that transition fired
+    const marking = new Map(Object.entries(entry.markingBefore));
+    this.net.setMarking(marking);
+    return entry;
+  }
+
+  /**
+   * Undo N steps. Returns array of undone entries.
+   */
+  playBack(n) {
+    const undone = [];
+    for (let i = 0; i < n; i++) {
+      const entry = this.stepBack();
+      if (!entry) break;
+      undone.push(entry);
+    }
+    return undone;
+  }
+
   /** Check if current state is a deadlock (no enabled transitions) */
   isDeadlocked() {
     return this.getEnabledTransitions().length === 0;
+  }
+
+  /** Can we step back? */
+  canStepBack() {
+    return this.history.length > 0;
   }
 
   /** Reset simulation state */

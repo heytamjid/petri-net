@@ -519,6 +519,32 @@ kbd {
 }
 
 /* ============================================================
+   Firing animation
+   ============================================================ */
+
+.anim-token {
+  fill: var(--accent);
+  filter: drop-shadow(0 0 6px var(--enabled-glow));
+  pointer-events: none;
+}
+
+.anim-token.reverse {
+  fill: var(--primary);
+  filter: drop-shadow(0 0 6px rgba(99, 102, 241, 0.4));
+}
+
+.anim-flash {
+  fill: var(--accent);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ============================================================
    Modal
    ============================================================ */
 
