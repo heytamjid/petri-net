@@ -52,6 +52,10 @@ class App {
     document.getElementById('btn-reset').addEventListener('click', () => this.resetSimulation());
   }
 
+  _isConcurrentMode() {
+    return document.getElementById('toggle-concurrent').checked;
+  }
+
   /** Play forward N steps with animation */
   async playSteps() {
     if (this._animating) return;
@@ -60,24 +64,45 @@ class App {
     this._setSimButtonsDisabled(true);
 
     let firedCount = 0;
-    for (let i = 0; i < n; i++) {
-      const enabled = this.simulator.getEnabledTransitions();
-      if (enabled.length === 0) {
-        this.log('DEADLOCK: No more transitions can fire.');
-        break;
+
+    if (this._isConcurrentMode()) {
+      // Maximal concurrency: fire all independent transitions per step
+      for (let i = 0; i < n; i++) {
+        const set = this.simulator.getMaximalConcurrentSet();
+        if (set.length === 0) {
+          this.log('DEADLOCK: No more transitions can fire.');
+          break;
+        }
+
+        // Animate all transitions in the set simultaneously
+        await Promise.all(set.map(tid => this._animateFiring(tid)));
+        this.simulator.fireConcurrent();
+        firedCount++;
+        const labels = set.map(tid => this.net.transitions.get(tid)?.label || tid);
+        this.log(`Step ${this.simulator.stepCount}: Fired [${labels.join(' + ')}]`);
+        this.refresh();
+
+        if (i < n - 1) await new Promise(r => setTimeout(r, 400));
       }
-      const tid = enabled[Math.floor(Math.random() * enabled.length)];
-      const t = this.net.transitions.get(tid);
+    } else {
+      // Interleaving: one random transition per step
+      for (let i = 0; i < n; i++) {
+        const enabled = this.simulator.getEnabledTransitions();
+        if (enabled.length === 0) {
+          this.log('DEADLOCK: No more transitions can fire.');
+          break;
+        }
+        const tid = enabled[Math.floor(Math.random() * enabled.length)];
+        const t = this.net.transitions.get(tid);
 
-      // Animate then fire
-      await this._animateFiring(tid);
-      this.simulator.fire(tid);
-      firedCount++;
-      this.log(`Step ${this.simulator.stepCount}: Fired ${t ? t.label : tid}`);
-      this.refresh();
+        await this._animateFiring(tid);
+        this.simulator.fire(tid);
+        firedCount++;
+        this.log(`Step ${this.simulator.stepCount}: Fired ${t ? t.label : tid}`);
+        this.refresh();
 
-      // Pause between steps so each is clearly visible
-      if (i < n - 1) await new Promise(r => setTimeout(r, 400));
+        if (i < n - 1) await new Promise(r => setTimeout(r, 400));
+      }
     }
 
     if (firedCount > 1) {

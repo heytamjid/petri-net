@@ -116,6 +116,93 @@ export class Simulator {
     return undone;
   }
 
+  /**
+   * Find a maximal set of independently enabled transitions.
+   * Two transitions are independent if they don't compete for tokens
+   * from any shared input place.
+   * Returns an array of transition ids that can all fire simultaneously.
+   */
+  getMaximalConcurrentSet() {
+    const enabled = this.getEnabledTransitions();
+    if (enabled.length === 0) return [];
+
+    // Greedily build a maximal independent set.
+    // Track how many tokens are "reserved" per place.
+    const reserved = new Map();
+    const selected = [];
+
+    for (const tid of enabled) {
+      const inputArcs = this.net.getInputArcs(tid);
+
+      // Check if this transition can fire given already-reserved tokens
+      let canFire = true;
+      for (const arc of inputArcs) {
+        const place = this.net.places.get(arc.placeId);
+        const available = place.tokens - (reserved.get(arc.placeId) || 0);
+        if (available < arc.weight) {
+          canFire = false;
+          break;
+        }
+      }
+
+      if (canFire) {
+        selected.push(tid);
+        // Reserve tokens for this transition
+        for (const arc of inputArcs) {
+          reserved.set(arc.placeId, (reserved.get(arc.placeId) || 0) + arc.weight);
+        }
+      }
+    }
+
+    return selected;
+  }
+
+  /**
+   * Fire all transitions in a concurrent set simultaneously.
+   * Saves a single history entry with all fired transitions.
+   * Returns the array of fired transition ids, or empty if deadlocked.
+   */
+  fireConcurrent() {
+    const set = this.getMaximalConcurrentSet();
+    if (set.length === 0) return [];
+
+    const markingBefore = this.net.getMarking();
+
+    // Consume all inputs first
+    for (const tid of set) {
+      const inputArcs = this.net.getInputArcs(tid);
+      for (const arc of inputArcs) {
+        const place = this.net.places.get(arc.placeId);
+        place.tokens -= arc.weight;
+      }
+    }
+
+    // Then produce all outputs
+    for (const tid of set) {
+      const outputArcs = this.net.getOutputArcs(tid);
+      for (const arc of outputArcs) {
+        const place = this.net.places.get(arc.placeId);
+        place.tokens += arc.weight;
+      }
+    }
+
+    const markingAfter = this.net.getMarking();
+    const labels = set.map(tid => {
+      const t = this.net.transitions.get(tid);
+      return t ? t.label : tid;
+    });
+    this.stepCount++;
+    this.history.push({
+      step: this.stepCount,
+      transitionId: set,       // array for concurrent
+      label: labels.join(' + '),
+      markingBefore: Object.fromEntries(markingBefore),
+      markingAfter: Object.fromEntries(markingAfter),
+    });
+
+    return set;
+  }
+
   /** Check if current state is a deadlock (no enabled transitions) */
   isDeadlocked() {
     return this.getEnabledTransitions().length === 0;
