@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Petri Net Simulator</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- Top Toolbar -->
+  <header id="toolbar">
+    <div class="toolbar-section">
+      <span class="toolbar-label">Tools</span>
+      <button class="tool-btn active" data-mode="select" title="Select & Move (V)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+        Select
+      </button>
+      <button class="tool-btn" data-mode="place" title="Add Place (P)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+        Place
+      </button>
+      <button class="tool-btn" data-mode="transition" title="Add Transition (T)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="3" width="8" height="18"/></svg>
+        Transition
+      </button>
+      <button class="tool-btn" data-mode="arc" title="Draw Arc (A)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="12 5 19 5 19 12"/></svg>
+        Arc
+      </button>
+      <button class="tool-btn" data-mode="delete" title="Delete (D)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Delete
+      </button>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <div class="toolbar-section">
+      <span class="toolbar-label">Simulate</span>
+      <button id="btn-step" class="action-btn" title="Fire one random enabled transition">Step</button>
+      <button id="btn-play" class="action-btn accent" title="Fire N steps">
+        Play
+      </button>
+      <input type="number" id="step-count" value="1" min="1" max="1000" title="Number of steps" />
+      <span class="step-label">steps</span>
+      <button id="btn-reset" class="action-btn" title="Reset to initial marking">Reset</button>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <div class="toolbar-section">
+      <span class="toolbar-label">Analyze</span>
+      <button id="btn-analyze" class="action-btn analyze" title="Run property analysis">Analyze</button>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <div class="toolbar-section">
+      <span class="toolbar-label">File</span>
+      <select id="example-select">
+        <option value="">-- Examples --</option>
+      </select>
+      <button id="btn-load-example" class="action-btn">Load</button>
+      <button id="btn-export" class="action-btn">Export</button>
+      <button id="btn-import" class="action-btn">Import</button>
+      <button id="btn-clear" class="action-btn danger">Clear</button>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <div id="main">
+    <!-- SVG Canvas -->
+    <div id="canvas-wrapper">
+      <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="marking-bar">
+        <span id="marking-display">Empty net</span>
+      </div>
+    </div>
+
+    <!-- Right Panel: Properties -->
+    <aside id="properties">
+      <h3>Properties</h3>
+      <div id="properties-content">
+        <p class="hint">Select an element to view its properties.</p>
+      </div>
+      <div id="shortcuts">
+        <h3>Shortcuts</h3>
+        <div class="shortcut-row"><kbd>V</kbd> Select</div>
+        <div class="shortcut-row"><kbd>P</kbd> Place</div>
+        <div class="shortcut-row"><kbd>T</kbd> Transition</div>
+        <div class="shortcut-row"><kbd>A</kbd> Arc</div>
+        <div class="shortcut-row"><kbd>D</kbd> Delete tool</div>
+        <div class="shortcut-row"><kbd>Space</kbd> Step once</div>
+        <div class="shortcut-row"><kbd>R</kbd> Reset</div>
+        <div class="shortcut-row"><kbd>Del</kbd> Remove selected</div>
+        <div class="shortcut-row"><kbd>Dbl-click</kbd> Fire transition</div>
+      </div>
+      <div id="legend">
+        <h3>Legend</h3>
+        <div class="legend-item">
+          <svg width="24" height="24"><circle cx="12" cy="12" r="9" fill="#fff" stroke="#344054" stroke-width="2"/></svg>
+          <span>Place</span>
+        </div>
+        <div class="legend-item">
+          <svg width="24" height="24"><rect x="6" y="3" width="12" height="18" fill="#344054" stroke="#344054" stroke-width="1"/></svg>
+          <span>Transition</span>
+        </div>
+        <div class="legend-item">
+          <svg width="24" height="24"><rect x="6" y="3" width="12" height="18" fill="#16a34a" stroke="#16a34a" stroke-width="1"/></svg>
+          <span>Enabled Transition</span>
+        </div>
+        <div class="legend-item">
+          <svg width="24" height="24"><circle cx="12" cy="12" r="4" fill="#344054"/></svg>
+          <span>Token</span>
+        </div>
+        <div class="legend-item">
+          <svg width="24" height="24"><line x1="2" y1="12" x2="18" y2="12" stroke="#667085" stroke-width="2"/><polygon points="18,8 24,12 18,16" fill="#667085"/></svg>
+          <span>Arc (directed)</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Log -->
+  <footer id="log-bar">
+    <div id="log"></div>
+  </footer>
+
+  <!-- Analysis Modal -->
+  <div id="analysis-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Petri Net Analysis</h3>
+        <button id="analysis-close" class="modal-close">&times;</button>
+      </div>
+      <div id="analysis-body"></div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
