@@ -75,6 +75,9 @@ class App {
       firedCount++;
       this.log(`Step ${this.simulator.stepCount}: Fired ${t ? t.label : tid}`);
       this.refresh();
+
+      // Pause between steps so each is clearly visible
+      if (i < n - 1) await new Promise(r => setTimeout(r, 400));
     }
 
     if (firedCount > 1) {
@@ -107,6 +110,8 @@ class App {
       undoneCount++;
       this.log(`Undo step ${this.simulator.stepCount + 1}: Reverted ${entry.label}`);
       this.refresh();
+
+      if (i < n - 1) await new Promise(r => setTimeout(r, 400));
     }
 
     if (undoneCount > 1) {

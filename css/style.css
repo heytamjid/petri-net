@@ -199,7 +199,7 @@ body {
 }
 
 .action-btn.danger {
-  color: var(--text-secondary);
+  color: var(--text);
   border-color: var(--border);
 }
 
