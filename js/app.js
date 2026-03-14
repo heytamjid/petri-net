@@ -646,10 +646,11 @@ class App {
       this.simulator.reset();
     }
     if (event === 'dblclick') {
-      // Focus the label input in properties for editing
+      this._renderProperties(data.id, data.type);
+      // Small delay so refresh() completes and DOM settles
       setTimeout(() => {
         const input = this.propsPanel.querySelector('input[data-prop="label"]');
-        if (input) input.focus();
+        if (input) { input.focus(); input.select(); }
       }, 50);
     }
     this.refresh();

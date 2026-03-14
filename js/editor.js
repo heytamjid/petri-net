@@ -3,19 +3,13 @@
 import { PLACE_RADIUS, TRANSITION_WIDTH, TRANSITION_HEIGHT } from './renderer.js';
 
 export class Editor {
-  /**
-   * @param {SVGElement} svg
-   * @param {import('./model.js').PetriNet} petriNet
-   * @param {import('./renderer.js').Renderer} renderer
-   * @param {Function} onChangeCallback
-   */
   constructor(svg, petriNet, renderer, onChangeCallback) {
     this.svg = svg;
     this.net = petriNet;
     this.renderer = renderer;
     this.onChange = onChangeCallback;
 
-    this.mode = 'select'; // 'select' | 'place' | 'transition' | 'arc' | 'delete'
+    this.mode = 'select';
     this.selectedId = null;
     this.selectedType = null;
 
@@ -26,8 +20,12 @@ export class Editor {
     this._dragOffsetY = 0;
 
     // Arc drawing state
-    this._arcSource = null; // { id, type }
+    this._arcSource = null;
     this._arcSourcePos = null;
+
+    // Manual double-click detection (native dblclick breaks when SVG is rebuilt between clicks)
+    this._lastClickTime = 0;
+    this._lastClickHitId = null;
 
     this._bindEvents();
   }
@@ -38,7 +36,6 @@ export class Editor {
     this.renderer.clearOverlay();
     this.svg.style.cursor = mode === 'select' ? 'default' :
       mode === 'delete' ? 'crosshair' : 'crosshair';
-    // Deselect when switching modes (except select)
     if (mode !== 'select') {
       this.select(null, null);
     }
@@ -55,21 +52,40 @@ export class Editor {
     this.svg.addEventListener('mousedown', (e) => this._onMouseDown(e));
     this.svg.addEventListener('mousemove', (e) => this._onMouseMove(e));
     this.svg.addEventListener('mouseup', (e) => this._onMouseUp(e));
-    this.svg.addEventListener('dblclick', (e) => this._onDblClick(e));
   }
 
   _getSVGPoint(e) {
     const rect = this.svg.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
-    // Convert screen coords to world coords via renderer transform
     return this.renderer.screenToWorld(sx, sy);
   }
 
   _onMouseDown(e) {
+    if (e.button !== 0) return; // only left click
+
     const pt = this._getSVGPoint(e);
     const hit = this.renderer.hitTest(pt.x, pt.y);
 
+    // --- Double-click detection (before any refresh/rebuild) ---
+    if (this.mode === 'select' && hit && (hit.type === 'place' || hit.type === 'transition')) {
+      const now = Date.now();
+      if (hit.id === this._lastClickHitId && now - this._lastClickTime < 400) {
+        // Double-click detected on this element
+        this._lastClickTime = 0;
+        this._lastClickHitId = null;
+        this.select(hit.id, hit.type);
+        this.onChange('dblclick', { id: hit.id, type: hit.type });
+        return; // don't start drag
+      }
+      this._lastClickTime = now;
+      this._lastClickHitId = hit.id;
+    } else {
+      this._lastClickTime = 0;
+      this._lastClickHitId = null;
+    }
+
+    // --- Normal mode handling ---
     switch (this.mode) {
       case 'select':
         if (hit) {
@@ -105,12 +121,10 @@ export class Editor {
       case 'arc':
         if (hit && (hit.type === 'place' || hit.type === 'transition')) {
           if (!this._arcSource) {
-            // First click: set source
             this._arcSource = hit;
             const elem = hit.type === 'place' ? this.net.places.get(hit.id) : this.net.transitions.get(hit.id);
             this._arcSourcePos = { x: elem.x, y: elem.y };
           } else {
-            // Second click: create arc
             this._createArc(this._arcSource, hit);
             this._arcSource = null;
             this._arcSourcePos = null;
@@ -153,18 +167,7 @@ export class Editor {
     this._dragId = null;
   }
 
-  _onDblClick(e) {
-    // Double-click on a place/transition to quick-edit label
-    const pt = this._getSVGPoint(e);
-    const hit = this.renderer.hitTest(pt.x, pt.y);
-    if (hit && (hit.type === 'place' || hit.type === 'transition')) {
-      this.select(hit.id, hit.type);
-      this.onChange('dblclick', { id: hit.id, type: hit.type });
-    }
-  }
-
   _createArc(source, target) {
-    // Arcs must connect a place and a transition (not same type)
     if (source.type === target.type) return;
 
     let placeId, transitionId, direction;
