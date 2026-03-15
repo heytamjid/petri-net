@@ -50,10 +50,22 @@ class App {
     document.getElementById('btn-play').addEventListener('click', () => this.playSteps());
     document.getElementById('btn-back').addEventListener('click', () => this.playBack());
     document.getElementById('btn-reset').addEventListener('click', () => this.resetSimulation());
+
+    // Firing mode tooltip
+    const modeSelect = document.getElementById('firing-mode');
+    const descriptions = {
+      interleaving: 'One transition fires per step. Highest priority wins; random among equal priority.',
+      maximal: 'All independently enabled transitions fire together in one step. Priority determines token reservation order.',
+    };
+    modeSelect.title = descriptions[modeSelect.value];
+    modeSelect.addEventListener('change', () => {
+      modeSelect.title = descriptions[modeSelect.value];
+      this.log(`Firing mode: ${modeSelect.value === 'maximal' ? 'Maximal Concurrency' : 'Interleaving'}`);
+    });
   }
 
   _isConcurrentMode() {
-    return document.getElementById('toggle-concurrent').checked;
+    return document.getElementById('firing-mode').value === 'maximal';
   }
 
   /** Play forward N steps with animation */

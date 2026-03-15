@@ -42,10 +42,10 @@
       <button id="btn-play" class="action-btn accent" title="Fire N steps (Space)">Play</button>
       <input type="number" id="step-count" value="1" min="1" max="1000" title="Number of steps" />
       <span class="step-label">steps</span>
-      <label class="toggle-label" title="Interleaving: one transition per step. Maximal: all independent transitions fire together.">
-        <input type="checkbox" id="toggle-concurrent" />
-        <span class="toggle-text">Maximal</span>
-      </label>
+      <select id="firing-mode" class="firing-mode-select">
+        <option value="interleaving" title="One transition fires per step (highest priority, random among ties)">Interleaving</option>
+        <option value="maximal" title="All independent transitions fire together per step">Maximal Concurrency</option>
+      </select>
     </div>
 
     <div class="toolbar-divider"></div>
