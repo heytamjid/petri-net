@@ -85,14 +85,14 @@ class App {
         if (i < n - 1) await new Promise(r => setTimeout(r, 400));
       }
     } else {
-      // Interleaving: one random transition per step
+      // Interleaving: one transition per step (highest priority, random among ties)
       for (let i = 0; i < n; i++) {
         const enabled = this.simulator.getEnabledTransitions();
         if (enabled.length === 0) {
           this.log('DEADLOCK: No more transitions can fire.');
           break;
         }
-        const tid = enabled[Math.floor(Math.random() * enabled.length)];
+        const tid = this.simulator._pickByPriority(enabled);
         const t = this.net.transitions.get(tid);
 
         await this._animateFiring(tid);
@@ -320,6 +320,12 @@ class App {
           this.net.saveInitialMarking();
           this.refresh();
         }
+      } else if (el.dataset.prop === 'priority') {
+        const t = this.net.transitions.get(this.editor.selectedId);
+        if (t) {
+          t.priority = Math.max(1, parseInt(el.value, 10) || 1);
+          this.refresh();
+        }
       } else if (el.dataset.prop === 'weight') {
         const arc = this.net.arcs.get(this.editor.selectedId);
         if (arc) {
@@ -373,6 +379,10 @@ class App {
         <div class="prop-row">
           <label>Label</label>
           <input type="text" data-prop="label" value="${this._escAttr(t.label)}" />
+        </div>
+        <div class="prop-row">
+          <label>Priority</label>
+          <input type="number" data-prop="priority" value="${t.priority}" min="1" />
         </div>
         <div class="prop-row hint">ID: ${t.id}</div>
         <div class="prop-row hint">${this.simulator.isEnabled(id) ? '<span class="badge enabled">Enabled</span>' : '<span class="badge disabled">Disabled</span>'}</div>

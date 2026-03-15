@@ -16,11 +16,12 @@ export class Place {
 }
 
 export class Transition {
-  constructor(id, x, y, label = '') {
+  constructor(id, x, y, label = '', priority = 1) {
     this.id = id;
     this.x = x;
     this.y = y;
     this.label = label;
+    this.priority = priority;
   }
 }
 
@@ -190,7 +191,7 @@ export class PetriNet {
       if (num > maxId) maxId = num;
     }
     for (const t of data.transitions) {
-      const tr = new Transition(t.id, t.x, t.y, t.label);
+      const tr = new Transition(t.id, t.x, t.y, t.label, t.priority ?? 1);
       net.transitions.set(t.id, tr);
       const num = parseInt(t.id.split('_')[1], 10);
       if (num > maxId) maxId = num;

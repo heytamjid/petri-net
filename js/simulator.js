@@ -65,13 +65,36 @@ export class Simulator {
     return true;
   }
 
-  /** Fire a random enabled transition. Returns the fired transition id, or null if deadlocked. */
+  /**
+   * Pick one enabled transition: highest priority wins, random among ties.
+   * Returns the fired transition id, or null if deadlocked.
+   */
   fireRandom() {
     const enabled = this.getEnabledTransitions();
     if (enabled.length === 0) return null;
-    const idx = Math.floor(Math.random() * enabled.length);
-    this.fire(enabled[idx]);
-    return enabled[idx];
+    const pick = this._pickByPriority(enabled);
+    this.fire(pick);
+    return pick;
+  }
+
+  /** From a list of transition ids, pick one: highest priority first, random among ties. */
+  _pickByPriority(tids) {
+    let maxPri = -Infinity;
+    for (const tid of tids) {
+      const t = this.net.transitions.get(tid);
+      if (t.priority > maxPri) maxPri = t.priority;
+    }
+    const top = tids.filter(tid => this.net.transitions.get(tid).priority === maxPri);
+    return top[Math.floor(Math.random() * top.length)];
+  }
+
+  /** Shuffle an array in place (Fisher-Yates) */
+  _shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }
 
   /**
@@ -126,12 +149,20 @@ export class Simulator {
     const enabled = this.getEnabledTransitions();
     if (enabled.length === 0) return [];
 
+    // Sort by priority descending, randomize within same priority
+    const sorted = [...enabled].sort((a, b) => {
+      const pa = this.net.transitions.get(a).priority;
+      const pb = this.net.transitions.get(b).priority;
+      if (pb !== pa) return pb - pa; // higher priority first
+      return Math.random() - 0.5;   // random among ties
+    });
+
     // Greedily build a maximal independent set.
     // Track how many tokens are "reserved" per place.
     const reserved = new Map();
     const selected = [];
 
-    for (const tid of enabled) {
+    for (const tid of sorted) {
       const inputArcs = this.net.getInputArcs(tid);
 
       // Check if this transition can fire given already-reserved tokens
@@ -147,7 +178,6 @@ export class Simulator {
 
       if (canFire) {
         selected.push(tid);
-        // Reserve tokens for this transition
         for (const arc of inputArcs) {
           reserved.set(arc.placeId, (reserved.get(arc.placeId) || 0) + arc.weight);
         }
