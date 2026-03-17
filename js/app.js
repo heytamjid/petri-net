@@ -24,6 +24,7 @@ class App {
     this._setupAnalyzeButton();
     this._setupKeyboardShortcuts();
     this._setupPanZoom();
+    this._setupLogToggle();
 
     // Load default example
     const defaultExample = 'German Traffic Light';
@@ -613,6 +614,9 @@ class App {
         case 'r':
           this.resetSimulation();
           break;
+        case 'l':
+          if (this.toggleLog) this.toggleLog();
+          break;
         case 'delete':
         case 'backspace':
           if (this.editor.selectedId) {
@@ -638,6 +642,25 @@ class App {
   _activateMode(mode, buttons) {
     buttons.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
     this.editor.setMode(mode);
+  }
+
+  _setupLogToggle() {
+    const logBtn = document.getElementById('btn-toggle-log');
+    const logBar = document.getElementById('log-bar');
+    if (!logBtn || !logBar) return;
+
+    this.toggleLog = () => {
+      logBar.classList.toggle('collapsed');
+      const isCollapsed = logBar.classList.contains('collapsed');
+      logBtn.textContent = isCollapsed ? 'Show Logs' : 'Hide Logs';
+      
+      if (!isCollapsed) {
+        const logEl = document.getElementById('log');
+        if (logEl) logEl.scrollTop = logEl.scrollHeight;
+      }
+    };
+
+    logBtn.addEventListener('click', this.toggleLog);
   }
 
   // ===================== PAN & ZOOM =====================
@@ -717,13 +740,19 @@ class App {
 
   _updateMarkingDisplay() {
     const el = document.getElementById('marking-display');
+    const zoomEl = document.getElementById('zoom-display');
+    if (!el) return;
+
     const parts = [];
     for (const [id, place] of this.net.places) {
       parts.push(`${place.label}: <strong>${place.tokens}</strong>`);
     }
-    const zoomPct = Math.round(this.renderer.zoom * 100);
-    const marking = parts.length > 0 ? `M = [ ${parts.join(' , ')} ]` : 'Empty net';
-    el.innerHTML = `<span class="zoom-indicator">${zoomPct}%</span> ${marking}`;
+    el.innerHTML = parts.length > 0 ? `M = [ ${parts.join(' , ')} ]` : 'Empty net';
+
+    if (zoomEl) {
+      const zoomPct = Math.round(this.renderer.zoom * 100);
+      zoomEl.textContent = `${zoomPct}%`;
+    }
   }
 
   log(message) {

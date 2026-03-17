@@ -119,6 +119,7 @@ Share designs with others by sending the JSON file.
 | `Space` | Play N steps forward |
 | `B` | Play N steps backward |
 | `R` | Reset to initial marking |
+| `L` | Toggle Log visibility |
 | `Del` | Remove selected element |
 | `Esc` | Back to Select tool |
 | `0` | Reset view (zoom/pan) |

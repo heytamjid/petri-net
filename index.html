@@ -70,7 +70,11 @@
     <div id="canvas-wrapper">
       <svg id="canvas" xmlns="http://www.w3.org/2000/svg"></svg>
       <div id="marking-bar">
-        <span id="marking-display">Empty net</span>
+        <div id="marking-display">Empty net</div>
+        <div id="marking-right">
+          <span id="zoom-display" class="zoom-indicator">100%</span>
+          <button id="btn-toggle-log" class="log-toggle-link" title="Toggle Log (L)">Show Logs</button>
+        </div>
       </div>
     </div>
 
@@ -90,6 +94,7 @@
         <div class="shortcut-row"><kbd>Space</kbd> Play forward</div>
         <div class="shortcut-row"><kbd>B</kbd> Play backward</div>
         <div class="shortcut-row"><kbd>R</kbd> Reset</div>
+        <div class="shortcut-row"><kbd>L</kbd> Toggle Log</div>
         <div class="shortcut-row"><kbd>Del</kbd> Remove selected</div>
         <div class="shortcut-row"><kbd>Left-drag</kbd> Move element</div>
         <div class="shortcut-row"><kbd>Dbl-click</kbd> Edit label</div>
@@ -124,7 +129,7 @@
   </div>
 
   <!-- Log -->
-  <footer id="log-bar">
+  <footer id="log-bar" class="collapsed">
     <div id="log"></div>
   </footer>
 
