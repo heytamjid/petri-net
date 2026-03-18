@@ -320,12 +320,23 @@ body {
    Properties panel
    ============================================================ */
 
-#properties h3 {
+.sidebar-main-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.2px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 4px;
+}
+
+.sidebar-section h3 {
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-secondary);
+  margin-bottom: 12px;
 }
 
 #properties-content h4 {
@@ -393,16 +404,7 @@ body {
 
 #shortcuts {
   border-top: 1px solid var(--border);
-  padding-top: 12px;
-}
-
-#shortcuts h3 {
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-  margin-bottom: 8px;
+  padding-top: 4px;
 }
 
 .shortcut-row {
@@ -433,6 +435,8 @@ kbd {
 
 #legend {
   margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 4px;
 }
 
 .legend-item {
@@ -442,6 +446,40 @@ kbd {
   margin-top: 6px;
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+/* ============================================================
+   Sidebar Footer
+   ============================================================ */
+
+#sidebar-footer {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.github-link:hover {
+  color: var(--text);
+}
+
+.github-link svg {
+  flex-shrink: 0;
+}
+
+.github-link img {
+  margin-left: auto;
+  height: 20px;
 }
 
 /* ============================================================

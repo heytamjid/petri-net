@@ -80,11 +80,16 @@
 
     <!-- Right Panel: Properties -->
     <aside id="properties">
-      <h3>Properties</h3>
-      <div id="properties-content">
-        <p class="hint">Select an element to view its properties.</p>
+      <h2 class="sidebar-main-title">Petri Net Simulator</h2>
+      
+      <div class="sidebar-section">
+        <h3>Properties</h3>
+        <div id="properties-content">
+          <p class="hint">Select an element to view its properties.</p>
+        </div>
       </div>
-      <div id="shortcuts">
+
+      <div id="shortcuts" class="sidebar-section">
         <h3>Shortcuts</h3>
         <div class="shortcut-row"><kbd>V</kbd> Select</div>
         <div class="shortcut-row"><kbd>P</kbd> Place</div>
@@ -102,7 +107,8 @@
         <div class="shortcut-row"><kbd>Right-drag</kbd> Pan canvas</div>
         <div class="shortcut-row"><kbd>0</kbd> Reset view</div>
       </div>
-      <div id="legend">
+
+      <div id="legend" class="sidebar-section">
         <h3>Legend</h3>
         <div class="legend-item">
           <svg width="24" height="24"><circle cx="12" cy="12" r="9" fill="#fff" stroke="#344054" stroke-width="2"/></svg>
@@ -124,6 +130,14 @@
           <svg width="24" height="24"><line x1="2" y1="12" x2="18" y2="12" stroke="#667085" stroke-width="2"/><polygon points="18,8 24,12 18,16" fill="#667085"/></svg>
           <span>Arc (directed)</span>
         </div>
+      </div>
+
+      <div id="sidebar-footer">
+        <a href="https://github.com/heytamjid/petri-net" target="_blank" rel="noopener noreferrer" class="github-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+          <span>GitHub</span>
+          <img src="https://img.shields.io/github/stars/heytamjid/petri-net?style=social" alt="GitHub stars">
+        </a>
       </div>
     </aside>
   </div>
