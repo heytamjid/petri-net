@@ -1,8 +1,6 @@
 # Petri Net Simulator
 
-An interactive, visual Petri Net simulator built with vanilla JavaScript and SVG. Designed as an educational tool to help students understand Petri Net behavior through hands-on visual experimentation.
-
-**Zero dependencies. No build tools. Just open and run.**
+An interactive, visual Petri Net simulator built with vanilla JavaScript and SVG. Zero dependencies. No build tools. Just open and run.
 
 ## Running Locally
 
